@@ -7,7 +7,7 @@ using namespace std;
 
 void Clean() {
     for (int i = 0; i < 3; i++) {
-        cout << ".";
+        cout << '.';
         Sleep(1000);
     }
     system("cls");
@@ -60,7 +60,7 @@ public:
             }
         }
         else {
-            cout << "Введені значення не є корректним" << endl;
+            cout << "Введені значення не є корректним\n";
         }
     }
 
@@ -113,6 +113,7 @@ public:
 
 class Field {
     int** field;
+
 public:
     Field() {
         field = new int* [10];
@@ -124,7 +125,7 @@ public:
         }
     }
 
-    void addShip(Ship& ship) {
+    Field& operator+=(Ship& ship) {
         int** coordinates = ship.getCoordinates();
         int x{ 0 }, y{ 0 };
         for (int i = 0; i < ship.getSize(); i++) {
@@ -132,6 +133,7 @@ public:
             y = coordinates[i][1];
             field[x][y] = 1;
         }
+        return *this;
     }
 
     bool isPlaceable(Ship& ship) {
@@ -155,33 +157,36 @@ public:
         return true;
     }
 
-    void display(bool showShips = false) {
-        cout << "  ";
+    friend ostream& operator<<(ostream& output, const Field& f) {
+        output << "  ";
         for (int i = 1; i <= 10; i++) {
-            cout << i << ' ';
+            output << i << ' ';
         }
-        cout << endl;
+        output << endl;
         for (int y = 0; y < 10; y++) {
-            cout << char('A' + y) << ' ';
+            output << char('A' + y) << ' ';
             for (int x = 0; x < 10; x++) {
-                if (showShips) {
-                    if (field[x][y] == 1 || field[x][y] == 2) cout << "X ";
-                    else cout << "- ";
-                }
-                else {
-                    if (field[x][y] == 2) cout << "X ";
-                    else if (field[x][y] == 3) cout << "- ";
-                    else cout << "? ";
-                }
+                if (f.field[x][y] == 2) output << "X ";
+                else if (f.field[x][y] == 3) output << "- ";
+                else output << "? ";
             }
-            cout << endl;
+            output << endl;
         }
+        return output;
     }
 
     int** getField() { return field; }
+
+    ~Field() {
+        for (int i = 0; i < 10; i++) {
+            delete[] field[i];
+        }
+        delete[] field;
+    }
 };
 
 class Player {
+protected:
     Ship ship6[1];
     Ship ship4[2];
     Ship ship3[3];
@@ -190,7 +195,7 @@ class Player {
     string name;
     int shipsNum = 0;
 
-    void place(int n, int size, Ship* ship) {
+    virtual void place(int n, int size, Ship* ship) {
         int x, y, d;
         char charY;
         bool valid = true;
@@ -203,32 +208,42 @@ class Player {
                 y = toupper(charY) - 'A';
                 ship[i] = Ship(size, x, y, d);
                 if (!field.isPlaceable(ship[i])) {
-                    cout<< "Координати виходять за межі поля!\n";
+                    cout<< "Корабель неможливо розташувати в цій точці!\n";
                     valid = false;
                 }
+                
             } while (!valid);
             shipsNum += size;
-            field.addShip(ship[i]);
-            field.display(true);
+            field += ship[i];
+            for (int i = 0; i < 10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    if (field.getField()[i][j] == 1) field.getField()[i][j] = 2;
+                }
+            }
+            cout << field;
         }
     }
 
 public:
-    Player(string name_i) : name{ name_i } { }
+    Player(string name_i) : name{ name_i } {}
 
-    void placeShips() {
+    virtual void placeShips() {
         cout << "ГРА МОРСЬКИЙ БІЙ" << endl;
-        Field field0;
-        field0.display();
+        cout << field;
         cout << name << ", розташуйте кораблі на полі" << endl;
         place(1, 6, ship6);
         place(2, 4, ship4);
         place(3, 3, ship3);
         place(4, 2, ship2);
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (field.getField()[i][j] == 2) field.getField()[i][j] = 1;
+            }
+        }
         Clean();
     }
 
-    bool shootOpponent(Field& opponent) {
+    virtual bool shootOpponent(Field& opponent) {
         int x, y;
         char charY;
         bool valid = true;
@@ -243,27 +258,32 @@ public:
                 cout << "Координати виходять за межі поля!\n";
                 valid = false;
             }
-            else {
-                if (opponent.getField()[x][y] == 0) {
-                    opponent.getField()[x][y] = 3;
-                    cout << "Промахнувся" << endl;
-                    Clean();
-                    return false;
-
-                }
-                else if (opponent.getField()[x][y]==1) {
-                    opponent.getField()[x][y] = 2;
-                    cout << "Влучив!" << endl;
-                    Clean();
-                    return true;
-                }
-            }
         } while (!valid);
+
+        int** opField = opponent.getField();
+        if (opField[x][y] == 1) {
+            opField[x][y] = 2;
+            cout << "Влучив!\n";
+            Clean();
+            return true;
+        }
+        else if (opField[x][y] == 2) {
+            cout << "Ви вже стріляли в це місце!\n";
+            Clean();
+            return false;
+        }
+        else {
+            opField[x][y] = 3;
+            cout << "Промахнувся!\n";
+            Clean();
+            return false;
+        }
     }
 
-    void showPlayer(bool showShips = false) {
-        cout << "Поле гравця " << name << endl;
-        field.display(showShips);
+    friend ostream& operator<<(ostream& output, const Player& p) {
+        output << "Поле гравця " << p.name << endl;
+        output << p.field;
+        return output;
     }
 
     Field& getField() { return field; }
@@ -271,30 +291,86 @@ public:
     int getShipsNum() { return shipsNum; }
 };
 
+class Bot : public Player {
+    void place(int n, int size, Ship* ship) override {
+        int x, y, d;
+        bool valid = true;
+        for (int i = 0; i < n; i++) {
+            do {
+                valid = true;
+                x = rand() % 10;
+                y = rand() % 10;
+                d = rand() % 2;
+                ship[i] = Ship(size, x, y, d);
+                if (!getField().isPlaceable(ship[i])) {
+                    valid = false;
+                }
+            } while (!valid);
+            getField() += ship[i];
+        }
+    }
+public:
+    Bot() : Player("Бот") {}
+
+    void placeShips() override {
+        cout << "ГРА МОРСЬКИЙ БІЙ" << endl;
+        cout << field;
+        cout << getName() << " розташовує кораблі";
+        place(1, 6, ship6);
+        place(2, 4, ship4);
+        place(3, 3, ship3);
+        place(4, 2, ship2);
+        Clean();
+    }
+
+    bool shootOpponent(Field& opponent) override {
+        int x, y;
+        int** opField = opponent.getField();
+        do {
+            x = rand() % 10;
+            y = rand() % 10;
+        } while (opField[x][y] == 2 || opField[x][y] == 3);
+        cout << getName() << " стріляє по координатах " << x + 1 << " " << char('A' + y) << "\n";
+        if (opField[x][y] == 1) {
+            opField[x][y] = 2;
+            cout << "Влучив!\n";
+            Clean();
+            return true;
+        }
+        else {
+            opField[x][y] = 3;
+            cout << "Промахнувся!\n";
+            Clean();
+            return false;
+        }
+    }
+};
+
+
 class Game {
-    Player player1;
-    Player player2;
+    Player* player1;
+    Player* player2;
     Score score;
 
 public:
-    Game(string name1, string name2) : player1(name1), player2(name2) {}
+    Game(Player* player1, Player* player2) : player1(player1), player2(player2) {}
 
     void start() {
-        player1.placeShips();
-        player2.placeShips();
+        player1->placeShips();
+        player2->placeShips();
 
         bool play = true;
         while (play) {
-            player1.showPlayer(false);
-            if (player2.shootOpponent(player1.getField())) {
+            cout << *player1;
+            if (player2->shootOpponent(player1->getField())) {
                 score.player2Won();
             }
-            player2.showPlayer(false);
-            if (player1.shootOpponent(player2.getField())) {
+            cout << *player2;
+            if (player1->shootOpponent(player2->getField())) {
                 score.player1Won();
             }
-            if (score.player1Score >= player1.getShipsNum() || score.player2Score >= player1.getShipsNum()) {
-                score.printScore(player1.getName(), player2.getName());
+            if (score.player1Score >= player1->getShipsNum() || score.player2Score >= player1->getShipsNum()) {
+                score.printScore(player1->getName(), player2->getName());
                 play = false;
             }
         }
@@ -309,12 +385,30 @@ int main() {
     string playerName1, playerName2;
     cout << "Введіть ім'я гравця 1: ";
     getline(cin, playerName1);
-    cout << "Введіть ім'я гравця 2: ";
-    getline(cin, playerName2);
+    Player player1(playerName1);
+    char choice;
+    Player* player2;
+    while (true) {
+        cout << "Хочете грати з ботом? (y/n) ";
+        cin >> choice;
+        if (tolower(choice) == 'y') {
+            playerName2 = "Бот";
+            player2 = new Bot();
+            break;
+        }
+        else if (tolower(choice == 'n')) {
+            cout << "Введіть ім'я гравця 2: ";
+            cin.ignore();
+            getline(cin, playerName2);
+            player2 = new Player(playerName2);
+            break;
+        }
+        else cout << "Неправильно введені дані\n";
+    }
     Clean();
-
-    Game game(playerName1, playerName2);
+    Game game(&player1, player2);
     game.start();
+    delete player2;
 
     ofstream file("results.txt");
     if (file.is_open()) {
