@@ -18,10 +18,10 @@ public:
     static int player1Score;
     static int player2Score;
 
-    static void printScore(string player1Name, string player2Name) {
+    /*static void printScore(string player1Name, string player2Name) {
         cout << "Рахунок:\nГравець " << player1Name << " - " << player1Score << " очок\nГравець " << player2Name << " - " << player2Score << " очок\n";
         player1Score > player2Score ? cout << "Переможець - " << player1Name << "\n" : player2Score > player1Score ? cout << "Переможець - " << player2Name << "\n" : cout << "Нічия\n";
-    }
+    }*/
 
     static void player1Won() { player1Score++; }
     static void player2Won() { player2Score++; }
@@ -208,10 +208,10 @@ protected:
                 y = toupper(charY) - 'A';
                 ship[i] = Ship(size, x, y, d);
                 if (!field.isPlaceable(ship[i])) {
-                    cout<< "Корабель неможливо розташувати в цій точці!\n";
+                    cout << "Корабель неможливо розташувати в цій точці!\n";
                     valid = false;
                 }
-                
+
             } while (!valid);
             shipsNum += size;
             field += ship[i];
@@ -370,7 +370,7 @@ public:
                 score.player1Won();
             }
             if (score.player1Score >= player1->getShipsNum() || score.player2Score >= player1->getShipsNum()) {
-                score.printScore(player1->getName(), player2->getName());
+                /*score.printScore(player1->getName(), player2->getName());*/
                 play = false;
             }
         }
@@ -382,43 +382,71 @@ int main() {
     SetConsoleOutputCP(1251);
     srand((time(0)));
 
-    string playerName1, playerName2;
-    cout << "Введіть ім'я гравця 1: ";
-    getline(cin, playerName1);
-    Player player1(playerName1);
-    char choice;
-    Player* player2;
     while (true) {
-        cout << "Хочете грати з ботом? (y/n) ";
-        cin >> choice;
-        if (tolower(choice) == 'y') {
-            playerName2 = "Бот";
-            player2 = new Bot();
-            break;
-        }
-        else if (tolower(choice == 'n')) {
-            cout << "Введіть ім'я гравця 2: ";
-            cin.ignore();
-            getline(cin, playerName2);
-            player2 = new Player(playerName2);
-            break;
-        }
-        else cout << "Неправильно введені дані\n";
-    }
-    Clean();
-    Game game(&player1, player2);
-    game.start();
-    delete player2;
+        cout << "Меню:\n1. Грати\n2. Переглянути результати останньої гри\n3. Вийти\nВаш вибір: ";
+        int choiceMenu;
+        cin >> choiceMenu;
+        cin.ignore();
 
-    ofstream file("results.txt");
-    if (file.is_open()) {
-        file << "Рахунок:\nГравець " << playerName1 << " - " << Score::player1Score << " очок\nГравець " << playerName2 << " - " << Score::player2Score << " очок\n";
-        Score::player1Score > Score::player2Score ? file << "Переможець - " << playerName1 << "\n" : Score::player2Score > Score::player1Score ? file << "Переможець - " << playerName2 << "\n" : file << "Нічия\n";
-        file.close();
-        cout << "Результати збережено у файл \"results.txt\"\n";
-    }
-    else {
-        cerr << "Не вдалося відкрити файл \"results.txt\".\n";
+        if (choiceMenu == 1) {
+            string playerName1, playerName2;
+            cout << "Введіть ім'я гравця 1: ";
+            getline(cin, playerName1);
+            Player player1(playerName1);
+            char choice;
+            Player* player2;
+            while (true) {
+                cout << "Хочете грати з ботом? (y/n) ";
+                cin >> choice;
+                if (tolower(choice) == 'y') {
+                    playerName2 = "Бот";
+                    player2 = new Bot();
+                    break;
+                }
+                else if (tolower(choice == 'n')) {
+                    cout << "Введіть ім'я гравця 2: ";
+                    cin.ignore();
+                    getline(cin, playerName2);
+                    player2 = new Player(playerName2);
+                    break;
+                }
+                else cout << "Неправильно введені дані\n";
+            }
+            Clean();
+            Game game(&player1, player2);
+            game.start();
+            delete player2;
+
+            ofstream file("results.txt");
+            if (file.is_open()) {
+                file << "Рахунок:\nГравець " << playerName1 << " - " << Score::player1Score << " очок\nГравець " << playerName2 << " - " << Score::player2Score << " очок\n";
+                Score::player1Score > Score::player2Score ? file << "Переможець - " << playerName1 << "\n" : Score::player2Score > Score::player1Score ? file << "Переможець - " << playerName2 << "\n" : file << "Нічия\n";
+                file.close();
+                cout << "Результати збережено у файл \"results.txt\"\n";
+            }
+            else {
+                cerr << "Не вдалося відкрити файл \"results.txt\".\n";
+            }
+        }
+        else if (choiceMenu == 2) {
+            ifstream file("results.txt");
+            if (file.is_open()) {
+                string line;
+                while (getline(file, line)) {
+                    cout << line << endl;
+                }
+                file.close();
+            }
+            else {
+                cerr << "Не вдалося відкрити файл \"results.txt\".\n";
+            }
+        }
+        else if (choiceMenu == 3) {
+            cout << "Дякую за гру!";
+            break;
+        }
+        else cout << "Некоректне введення\n";
+        Clean();
     }
     return 0;
 }
