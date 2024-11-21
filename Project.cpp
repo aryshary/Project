@@ -18,11 +18,6 @@ public:
     static int player1Score;
     static int player2Score;
 
-    /*static void printScore(string player1Name, string player2Name) {
-        cout << "Рахунок:\nГравець " << player1Name << " - " << player1Score << " очок\nГравець " << player2Name << " - " << player2Score << " очок\n";
-        player1Score > player2Score ? cout << "Переможець - " << player1Name << "\n" : player2Score > player1Score ? cout << "Переможець - " << player2Name << "\n" : cout << "Нічия\n";
-    }*/
-
     static void player1Won() { player1Score++; }
     static void player2Won() { player2Score++; }
 };
@@ -370,7 +365,6 @@ public:
                 score.player1Won();
             }
             if (score.player1Score >= player1->getShipsNum() || score.player2Score >= player1->getShipsNum()) {
-                /*score.printScore(player1->getName(), player2->getName());*/
                 play = false;
             }
         }
